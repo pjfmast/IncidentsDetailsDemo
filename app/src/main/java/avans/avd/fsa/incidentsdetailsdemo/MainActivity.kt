@@ -36,8 +36,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import avans.avd.fsa.incidentsdetailsdemo.ui.theme.IncidentsDetailsDemoTheme
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Duration.Companion.days
+// the following import can be removed when the experimental time API is stable (In Kotlin 2.3.0)
+import kotlin.time.ExperimentalTime
 
 enum class Priority(val label: String, val deadlineDays: Long) {
     LOW("Low", 7),
@@ -72,7 +77,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
+// This OptIn can be removed when the experimental time API is stable (In Kotlin 2.3.0)
+@OptIn(ExperimentalTime::class)
 // State (note, priority) is passed down as parameters
 // Events (onNoteChange, onPriorityChange) are passed up as callbacks
 @Composable
@@ -88,8 +94,10 @@ fun IncidentScreen(
 ) {
     // We're "subscribing" to priority, changing deadline each time priority updates.
     val deadline = remember(priority) {
-        val date = LocalDate.now().plusDays(priority.deadlineDays)
-        date.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+        val now = Clock.System.now()
+        val shifted = now + priority.deadlineDays.days
+        val ldt = shifted.toLocalDateTime(TimeZone.currentSystemDefault())
+        String.format("%02d-%02d-%04d", ldt.day, ldt.month.number, ldt.year)
     }
 
     Column(
